@@ -1,0 +1,7 @@
+.game-over {
+  clear: both;
+  color: Indigo;
+  font-size: 8rem;
+  font-weight: bold;
+  text-align: center;
+}
