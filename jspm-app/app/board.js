@@ -1,34 +1,71 @@
 'use strict'
 
-import Board from './board'
+import Square from './square'
 
-export default class App {
-  constructor (board) {
-    this.board = board
+const WIN_PATTERNS = [
+  'xxx......', '...xxx...', '......xxx',
+  'x..x..x..', '.x..x..x.', '..x..x..x',
+  'x...x...x', '..x.x.x..'
+].join('|')
+
+export default class Board {
+  constructor () {
+    this.squares = new Array(9).fill(null).map(() => {
+      return new Square()
+    })
   }
 
-move (e) {
-  let winMessage = this.board.move(e.target)
+  playSquare (square, mark) {
+    this.squares[square].makeMark(mark)
+    return this.squares[square].render()
+  }
 
-  if (winMessage) {
+  getPlayer (board) {
+    let moves = 9 -
+      document.getElementById('board').querySelectorAll('.empty').length
+
+    return (moves % 2 === 0) ? 'x' : 'o'
+  }
+
+  checkForWin (player, pattern) {
+    let winPatterns =
+      player === 'x' ? WIN_PATTERNS : WIN_PATTERNS.replace(/x/ig, 'o')
+    let re = new RegExp(winPatterns)
+
+    return re.test(pattern) ? `${player.toUpperCase()} wins!` : false
+  }
+
+  checkForTie (pattern) {
+    return false
+  }
+
+  checkForWinOrTie(squares, player) {
+    let pattern = Array.prototype.map.call(squares, (square) => {
+      return square.innerText === '' ? '-' : square.innerText
+    }).join('').toLowerCase()
+
+    return this.checkForWin(player, pattern) || this.checkForTie(pattern)
+  }
+
+  move (oldSquare) {
+    let boardElem = oldSquare.parentElement
+    let square = Array.prototype.indexOf.call(boardElem.children, oldSquare)
+    let player = this.getPlayer()
+    let newSquare = this.playSquare(square, player)
+
+    boardElem.replaceChild(newSquare, oldSquare)
+
+    return this.checkForWinOrTie(boardElem.children, player)
+  }
+
+  render () {
     let div = document.createElement('div')
 
-    div.className = 'game-over'
-    div.innerText = winMessage
-    document.body.appenChild(div)
+    div.id = 'board'
+    div.className = 'board'
 
-    document.getElementById('board')
-      .removeEventListener('click', this.boundMove, false)
-    delete this.boundMove
+    this.squares.map((s) => div.appendChild(s.render()))
+
+    return div
   }
-}
-
-newGame () {
-  this.board = new Board()
-  this.boundMove = this.move.bind(this)
-
-  document.body.appendChild(this.board.render)
-
-  document.getElementById('board')
-    .addEventListener('click', this.boundMove)
 }
